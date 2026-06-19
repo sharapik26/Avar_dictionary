@@ -24,6 +24,23 @@ def get_first_letter(word: str) -> str:
     return word[0]
 
 
+def normalize_for_search(word: str) -> str:
+    """Нормализует слово для гибкого поиска (палочка, ё->е)."""
+    if not word:
+        return ""
+    w = word.lower().strip()
+    
+    # 1. Замена ё на е
+    w = w.replace('ё', 'е')
+    
+    # 2. Нормализация всех видов 'палочки' к единому символу '1'
+    # Используются: '!', 'l' (латинская L), 'i' (латинская I), 'і' (укр/белорус), 'ӏ', 'Ӏ'
+    for p in ['!', 'l', 'i', 'і', 'ӏ', 'Ӏ']:
+        w = w.replace(p, '1')
+        
+    return w
+
+
 class Dictionary:
     """Класс для работы с двуязычным словарём (один JSONL файл)."""
 
@@ -46,11 +63,12 @@ class Dictionary:
                     idx = len(self.entries)
                     self.entries.append(entry)
 
-                    word = entry.get("word", "").lower()
+                    word = entry.get("word", "")
                     if word:
-                        if word not in self.word_index:
-                            self.word_index[word] = []
-                        self.word_index[word].append(idx)
+                        norm_word = normalize_for_search(word)
+                        if norm_word not in self.word_index:
+                            self.word_index[norm_word] = []
+                        self.word_index[norm_word].append(idx)
                         
                         letter = get_first_letter(word)
                         if letter:
@@ -67,24 +85,24 @@ class Dictionary:
         Поиск по словарю. Сначала точное совпадение, затем по префиксу,
         затем подстрока.
         """
-        query_lower = query.lower().strip()
-        if not query_lower:
+        query_norm = normalize_for_search(query)
+        if not query_norm:
             return []
 
         results = []
         seen_indices = set()
 
         # 1. Точное совпадение
-        if query_lower in self.word_index:
-            for idx in self.word_index[query_lower]:
+        if query_norm in self.word_index:
+            for idx in self.word_index[query_norm]:
                 if idx not in seen_indices:
                     results.append(self.entries[idx])
                     seen_indices.add(idx)
 
         # 2. Префиксный поиск
         if len(results) < limit:
-            for word, indices in self.word_index.items():
-                if word.startswith(query_lower) and word != query_lower:
+            for word_norm, indices in self.word_index.items():
+                if word_norm.startswith(query_norm) and word_norm != query_norm:
                     for idx in indices:
                         if idx not in seen_indices:
                             results.append(self.entries[idx])
@@ -95,9 +113,9 @@ class Dictionary:
                     break
 
         # 3. Поиск по подстроке (если мало результатов)
-        if len(results) < limit and len(query_lower) >= 3:
-            for word, indices in self.word_index.items():
-                if query_lower in word and not word.startswith(query_lower):
+        if len(results) < limit and len(query_norm) >= 3:
+            for word_norm, indices in self.word_index.items():
+                if query_norm in word_norm and not word_norm.startswith(query_norm):
                     for idx in indices:
                         if idx not in seen_indices:
                             results.append(self.entries[idx])
@@ -110,10 +128,10 @@ class Dictionary:
         return results[:limit]
 
     def get_word(self, word: str) -> list[dict]:
-        """Получить все статьи для конкретного слова (точное совпадение)."""
-        word_lower = word.lower().strip()
-        if word_lower in self.word_index:
-            return [self.entries[idx] for idx in self.word_index[word_lower]]
+        """Получить словарную статью по точному совпадению слова."""
+        word_norm = normalize_for_search(word)
+        if word_norm in self.word_index:
+            return [self.entries[idx] for idx in self.word_index[word_norm]]
         return []
 
     def get_alphabet(self) -> list[dict]:
