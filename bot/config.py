@@ -5,7 +5,7 @@
 import os
 
 # Токен бота (получить у @BotFather)
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "7914908009:AAFKeOxBT2wiRRtWpvt4S9aJ8gkZJ0NtLQs")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 
 # URL Mini App (заменить на реальный при деплое)
 WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://hybrid-wage-devel-chicago.trycloudflare.com")
