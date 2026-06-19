@@ -250,11 +250,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Ищем сначала в аварско-русском, потом в русско-аварском
     results = dict_manager.search(query, "av-ru", limit=3)
-    dict_label = "🇦🇿→🇷🇺"
+    dict_label = "🏔️→🇷🇺"
 
     if not results:
         results = dict_manager.search(query, "ru-av", limit=3)
-        dict_label = "🇷🇺→🇦🇿"
+        dict_label = "🇷🇺→🏔️"
 
     if not results:
         await update.message.reply_text(
