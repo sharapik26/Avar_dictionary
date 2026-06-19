@@ -27,6 +27,7 @@ from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
+    CallbackQueryHandler,
     filters,
     ContextTypes,
 )
@@ -181,14 +182,21 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def word_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /word — случайное слово."""
     entry = dict_manager.get_random("av-ru")
+    message = update.message or update.callback_query.message
+    
     if entry is None:
-        await update.message.reply_text("❌ Словарь не загружен.")
+        await message.reply_text("❌ Словарь не загружен.")
         return
 
     text = format_entry(entry, detailed=True)
     text = f"🎲 *Случайное слово:*\n\n{text}"
 
-    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
+    await message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
+
+async def random_word_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик инлайн кнопки 'Случайное слово'."""
+    await update.callback_query.answer()
+    await word_command(update, context)
 
 
 async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -348,6 +356,7 @@ def get_bot_app() -> Application | None:
     app.add_handler(CommandHandler("word", word_command))
     app.add_handler(CommandHandler("subscribe", subscribe_command))
     app.add_handler(CommandHandler("unsubscribe", unsubscribe_command))
+    app.add_handler(CallbackQueryHandler(random_word_callback, pattern="^random_word$"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
     # Планировщик слова дня
