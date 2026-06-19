@@ -29,8 +29,7 @@
 Avar_dictionary/
 ├── api/                  # FastAPI бэкенд
 │   ├── main.py           # Точка входа сервера и API
-│   ├── dictionary.py     # Логика поиска и работы с базой данных слов
-│   └── data/             # JSON файлы со словарем (ru-av.json, av-ru.json)
+│   └── dictionary.py     # Логика поиска и работы с базой данных слов
 ├── bot/                  # Telegram Бот
 │   ├── main.py           # Точка входа бота, обработчики команд
 │   └── config.py         # Конфигурация и переменные окружения
@@ -38,6 +37,8 @@ Avar_dictionary/
 │   ├── index.html
 │   ├── style.css
 │   └── app.js
+├── av-ru.jsonl           # База данных: Аварско-русский словарь
+├── ru-av.jsonl           # База данных: Русско-аварский словарь
 ├── requirements.txt      # Зависимости проекта
 └── README.md             # Документация
 ```
