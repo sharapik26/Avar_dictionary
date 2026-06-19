@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+env.bak/
+venv.bak/
+.env
+
+# Файлы БД и локальные логи
+*.log
+subscribers.json
+
+# IDE
+.vscode/
+.idea/
+.vs/

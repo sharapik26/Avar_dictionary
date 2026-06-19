@@ -1,0 +1,168 @@
+"""
+Модуль загрузки и поиска по аварским словарям.
+Загружает JSONL файлы в память при старте и предоставляет функции поиска.
+"""
+
+import json
+import random
+import os
+from pathlib import Path
+from typing import Optional
+
+
+class Dictionary:
+    """Класс для работы с двуязычным словарём (один JSONL файл)."""
+
+    def __init__(self, filepath: str):
+        self.filepath = filepath
+        self.entries: list[dict] = []
+        self.word_index: dict[str, list[int]] = {}  # word -> list of entry indices
+        self._load()
+
+    def _load(self):
+        """Загрузить JSONL файл в память и построить индекс."""
+        with open(self.filepath, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    idx = len(self.entries)
+                    self.entries.append(entry)
+
+                    word = entry.get("word", "").lower()
+                    if word:
+                        if word not in self.word_index:
+                            self.word_index[word] = []
+                        self.word_index[word].append(idx)
+                except json.JSONDecodeError:
+                    continue
+
+        print(f"Загружено {len(self.entries)} записей из {self.filepath}")
+
+    def search(self, query: str, limit: int = 50) -> list[dict]:
+        """
+        Поиск по словарю. Сначала точное совпадение, затем по префиксу,
+        затем подстрока.
+        """
+        query_lower = query.lower().strip()
+        if not query_lower:
+            return []
+
+        results = []
+        seen_indices = set()
+
+        # 1. Точное совпадение
+        if query_lower in self.word_index:
+            for idx in self.word_index[query_lower]:
+                if idx not in seen_indices:
+                    results.append(self.entries[idx])
+                    seen_indices.add(idx)
+
+        # 2. Префиксный поиск
+        if len(results) < limit:
+            for word, indices in self.word_index.items():
+                if word.startswith(query_lower) and word != query_lower:
+                    for idx in indices:
+                        if idx not in seen_indices:
+                            results.append(self.entries[idx])
+                            seen_indices.add(idx)
+                            if len(results) >= limit:
+                                break
+                if len(results) >= limit:
+                    break
+
+        # 3. Поиск по подстроке (если мало результатов)
+        if len(results) < limit and len(query_lower) >= 3:
+            for word, indices in self.word_index.items():
+                if query_lower in word and not word.startswith(query_lower):
+                    for idx in indices:
+                        if idx not in seen_indices:
+                            results.append(self.entries[idx])
+                            seen_indices.add(idx)
+                            if len(results) >= limit:
+                                break
+                if len(results) >= limit:
+                    break
+
+        return results[:limit]
+
+    def get_word(self, word: str) -> list[dict]:
+        """Получить все статьи для конкретного слова (точное совпадение)."""
+        word_lower = word.lower().strip()
+        if word_lower in self.word_index:
+            return [self.entries[idx] for idx in self.word_index[word_lower]]
+        return []
+
+    def get_random(self) -> dict:
+        """Получить случайную запись из словаря."""
+        return random.choice(self.entries)
+
+    def get_random_with_examples(self) -> dict:
+        """
+        Получить случайную запись, у которой есть примеры использования.
+        Идеально для 'слова дня'.
+        """
+        candidates = [
+            entry for entry in self.entries
+            if any(
+                example
+                for sense in entry.get("senses", [])
+                for example in sense.get("examples", [])
+            )
+            and entry.get("pos") not in ("выражение",)
+        ]
+        if candidates:
+            return random.choice(candidates)
+        return self.get_random()
+
+
+class DictionaryManager:
+    """Менеджер словарей — загружает оба словаря и предоставляет единый интерфейс."""
+
+    def __init__(self, data_dir: str = None):
+        if data_dir is None:
+            # По умолчанию ищем словари в корне проекта
+            data_dir = str(Path(__file__).parent.parent)
+
+        self.data_dir = data_dir
+        self.dictionaries: dict[str, Dictionary] = {}
+        self._load_all()
+
+    def _load_all(self):
+        """Загрузить все доступные словари."""
+        av_ru_path = os.path.join(self.data_dir, "av-ru.jsonl")
+        ru_av_path = os.path.join(self.data_dir, "ru-av.jsonl")
+
+        if os.path.exists(av_ru_path):
+            self.dictionaries["av-ru"] = Dictionary(av_ru_path)
+        else:
+            print(f"ВНИМАНИЕ: файл {av_ru_path} не найден!")
+
+        if os.path.exists(ru_av_path):
+            self.dictionaries["ru-av"] = Dictionary(ru_av_path)
+        else:
+            print(f"ВНИМАНИЕ: файл {ru_av_path} не найден!")
+
+    def get_dict(self, name: str) -> Optional[Dictionary]:
+        """Получить словарь по имени."""
+        return self.dictionaries.get(name)
+
+    def search(self, query: str, dict_name: str = "av-ru", limit: int = 50) -> list[dict]:
+        d = self.get_dict(dict_name)
+        if d is None:
+            return []
+        return d.search(query, limit)
+
+    def get_word(self, word: str, dict_name: str = "av-ru") -> list[dict]:
+        d = self.get_dict(dict_name)
+        if d is None:
+            return []
+        return d.get_word(word)
+
+    def get_random(self, dict_name: str = "av-ru") -> Optional[dict]:
+        d = self.get_dict(dict_name)
+        if d is None:
+            return None
+        return d.get_random_with_examples()

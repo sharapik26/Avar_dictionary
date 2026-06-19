@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Аварско-русский и русско-аварский словарь. Telegram Mini App для изучения аварского языка.">
+    <title>МагӀарул мацӀ — Аварский словарь</title>
+    
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+</head>
+<body>
+
+    <!-- ═══ Header ═══ -->
+    <header class="header" id="header">
+        <div class="header-inner">
+            <div class="header-top">
+                <div class="header-title">
+                    <div class="header-icon">📖</div>
+                    <div>
+                        <h1>МагӀарул мацӀ</h1>
+                        <div class="header-subtitle">Аварский словарь</div>
+                    </div>
+                </div>
+                <div class="stats-badge" id="statsBadge">загрузка...</div>
+            </div>
+
+            <!-- Direction Switcher -->
+            <div class="direction-switcher" id="directionSwitcher">
+                <button class="direction-btn active" data-dict="av-ru" id="btnAvRu">
+                    Аварский <span class="direction-arrow">→</span> Русский
+                </button>
+                <button class="direction-btn" data-dict="ru-av" id="btnRuAv">
+                    Русский <span class="direction-arrow">→</span> Аварский
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══ Search ═══ -->
+    <div class="search-container" id="searchContainer">
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input 
+                type="text" 
+                class="search-input" 
+                id="searchInput"
+                placeholder="Введите слово для поиска..."
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+            >
+            <button class="search-clear" id="searchClear" aria-label="Очистить">✕</button>
+        </div>
+    </div>
+
+    <!-- ═══ Content ═══ -->
+    <main class="content" id="content">
+        
+        <!-- Loading -->
+        <div class="loading-indicator" id="loadingIndicator">
+            <div class="loading-dots">
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+            </div>
+        </div>
+
+        <!-- Welcome State -->
+        <div class="welcome-state" id="welcomeState">
+            <div class="welcome-icon">🏔️</div>
+            <div class="welcome-title">Аварский словарь</div>
+            <div class="welcome-text">
+                Введите слово на аварском или русском языке для поиска перевода
+            </div>
+            <div class="random-word-section" id="randomWordSection">
+                <div class="random-word-label">✨ Слово дня</div>
+                <div class="random-word-card" id="randomWordCard">
+                    <div class="random-word-title" id="randomWord">—</div>
+                    <div class="random-word-pos" id="randomPos"></div>
+                    <div class="random-word-translation" id="randomTranslation">Загрузка...</div>
+                    <div class="random-word-example" id="randomExample" style="display:none;">
+                        <div class="av" id="randomExAv"></div>
+                        <div class="ru" id="randomExRu"></div>
+                    </div>
+                </div>
+                <button class="refresh-btn" id="refreshRandom">
+                    <span class="icon">🔄</span> Другое слово
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Header -->
+        <div class="results-header" id="resultsHeader">
+            <span class="results-count" id="resultsCount"></span>
+        </div>
+
+        <!-- Results List -->
+        <div class="results-list" id="resultsList"></div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-text">Ничего не найдено. Попробуйте другое написание.</div>
+        </div>
+    </main>
+
+    <!-- ═══ Word Detail Modal ═══ -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal" id="modal">
+        <div class="modal-handle">
+            <div class="modal-handle-bar"></div>
+        </div>
+        <div class="modal-content" id="modalContent">
+            <!-- Filled dynamically -->
+        </div>
+    </div>
+
+    <!-- App Script -->
+    <script src="app.js"></script>
+</body>
+</html>
