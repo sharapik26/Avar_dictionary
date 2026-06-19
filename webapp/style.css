@@ -954,3 +954,110 @@ body::before {
         max-width: 640px;
     }
 }
+
+/* ── Bottom Navigation ── */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--color-bg-secondary);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 100;
+}
+
+.nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: var(--transition-base);
+    height: 100%;
+    padding: 6px 0;
+}
+
+.nav-btn.active {
+    color: var(--color-emerald);
+}
+
+.nav-icon {
+    font-size: 1.4rem;
+    margin-bottom: 2px;
+}
+
+.nav-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+/* ── Alphabet State ── */
+.alphabet-state {
+    padding: 10px 4px 60px;
+    animation: fadeIn 0.3s ease;
+}
+
+.alphabet-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.alphabet-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+}
+
+.alphabet-subtitle {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.alphabet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 12px;
+}
+
+.alphabet-tile {
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.alphabet-tile:hover {
+    background: var(--color-bg-card-hover);
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+}
+
+.alphabet-tile-letter {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.alphabet-tile-count {
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}

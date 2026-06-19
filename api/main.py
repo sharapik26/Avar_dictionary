@@ -116,7 +116,25 @@ async def random_word(
     return {"entry": entry}
 
 
-@app.get("/api/stats")
+@app.get("/api/alphabet")
+async def alphabet(
+    dict: str = Query("av-ru", pattern="^(av-ru|ru-av)$"),
+):
+    """Получить список букв алфавита для словаря."""
+    return dict_manager.get_alphabet(dict_name=dict)
+
+
+@app.get("/api/words_by_letter/{letter}")
+async def words_by_letter(
+    letter: str,
+    dict: str = Query("av-ru", pattern="^(av-ru|ru-av)$"),
+):
+    """Получить слова на заданную букву."""
+    entries = dict_manager.get_words_by_letter(letter, dict_name=dict)
+    return entries
+
+
+@app.api_route("/api/stats", methods=["GET", "HEAD"])
 async def stats():
     """Статистика словарей."""
     result = {}

@@ -22,6 +22,8 @@ from telegram import (
     WebAppInfo,
     BotCommand,
     MenuButtonWebApp,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
 )
 from telegram.ext import (
     Application,
@@ -34,7 +36,8 @@ from telegram.ext import (
 from telegram.constants import ParseMode
 
 from config import BOT_TOKEN, WEBAPP_URL, DATA_DIR, PROXY_URL
-from db import init_db, add_subscriber, remove_subscriber, get_all_subscribers
+from db import init_db, add_subscriber, remove_subscriber, get_all_subscribers, get_word_of_day, set_word_of_day
+from datetime import datetime
 from dictionary import DictionaryManager
 
 # Настройка логирования
@@ -119,24 +122,38 @@ def escape_md(text: str) -> str:
 # Обработчики команд
 # ──────────────────────────────────────────────
 
+async def get_today_word_entry() -> dict | None:
+    """Возвращает зафиксированное слово дня из БД или генерирует новое."""
+    today = datetime.utcnow().date()
+    word = await get_word_of_day(today)
+    if word:
+        entries = dict_manager.get_word(word, "av-ru")
+        if entries:
+            return entries[0]
+            
+    # Если на сегодня слова еще нет, генерируем новое
+    entry = dict_manager.get_random("av-ru")
+    if entry:
+        await set_word_of_day(today, entry.get("word"))
+    return entry
+
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /start."""
-    keyboard = []
+    reply_keyboard = []
 
     # Кнопка Mini App
     if WEBAPP_URL and WEBAPP_URL != "https://your-domain.com":
-        keyboard.append([
-            InlineKeyboardButton(
-                "📖 Открыть словарь",
-                web_app=WebAppInfo(url=WEBAPP_URL),
-            )
+        reply_keyboard.append([
+            KeyboardButton("📖 Открыть словарь", web_app=WebAppInfo(url=WEBAPP_URL))
         ])
 
-    keyboard.append([
-        InlineKeyboardButton("🎲 Случайное слово", callback_data="random_word"),
+    reply_keyboard.append([
+        KeyboardButton("🌟 Слово дня"),
+        KeyboardButton("🎲 Случайное слово"),
     ])
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = ReplyKeyboardMarkup(reply_keyboard, resize_keyboard=True)
 
     av_len = len(dict_manager.dictionaries.get('av-ru', {}).entries if dict_manager.dictionaries.get('av-ru') else [])
     ru_len = len(dict_manager.dictionaries.get('ru-av', {}).entries if dict_manager.dictionaries.get('ru-av') else [])
@@ -221,11 +238,27 @@ async def unsubscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
 
 
+async def word_of_day_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показать слово дня по запросу."""
+    entry = await get_today_word_entry()
+    if entry is None:
+        await update.message.reply_text("Не удалось получить слово дня.")
+        return
+
+    text = f"🌟 *Слово дня:*\n\n{format_entry(entry, detailed=True)}"
+    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
+
+
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработчик текстовых сообщений — поиск слова."""
+    """Обработчик текстовых сообщений — поиск слова или кнопки меню."""
     query = update.message.text.strip()
     if not query or len(query) > 100:
         return
+
+    if query == "🌟 Слово дня":
+        return await word_of_day_command(update, context)
+    if query == "🎲 Случайное слово":
+        return await word_command(update, context)
 
     # Ищем сначала в аварско-русском, потом в русско-аварском
     results = dict_manager.search(query, "av-ru", limit=3)
@@ -268,12 +301,12 @@ async def send_word_of_day(context: ContextTypes.DEFAULT_TYPE):
         logger.info("Нет подписчиков для слова дня.")
         return
 
-    entry = dict_manager.get_random("av-ru")
+    entry = await get_today_word_entry()
     if entry is None:
-        logger.error("Не удалось получить случайное слово.")
+        logger.error("Не удалось получить слово дня.")
         return
 
-    text = f"🌅 *Слово дня:*\n\n{format_entry(entry, detailed=True)}"
+    text = f"🌟 *Слово дня:*\n\n{format_entry(entry, detailed=True)}"
 
     sent_count = 0
     failed = []

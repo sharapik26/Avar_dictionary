@@ -4,9 +4,9 @@
 import logging
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import BigInteger, String, select
+from sqlalchemy import BigInteger, String, select, Date
 from sqlalchemy.pool import NullPool
-from datetime import datetime
+from datetime import datetime, date
 
 from config import DATABASE_URL
 
@@ -53,6 +53,13 @@ class Subscriber(Base):
     username: Mapped[str | None] = mapped_column(String, nullable=True)
     full_name: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
+
+class WordOfDay(Base):
+    __tablename__ = "word_of_day"
+
+    date: Mapped[date] = mapped_column(Date, primary_key=True)
+    word: Mapped[str] = mapped_column(String, nullable=False)
 
 
 async def init_db():
@@ -117,3 +124,28 @@ async def get_all_subscribers() -> list[int]:
     async with async_session() as session:
         result = await session.execute(select(Subscriber.chat_id))
         return list(result.scalars().all())
+
+
+async def get_word_of_day(target_date: date) -> str | None:
+    """Возвращает сохраненное слово дня для указанной даты."""
+    if not async_session:
+        return None
+    async with async_session() as session:
+        result = await session.execute(select(WordOfDay).filter_by(date=target_date))
+        wod = result.scalar_one_or_none()
+        return wod.word if wod else None
+
+
+async def set_word_of_day(target_date: date, word: str) -> bool:
+    """Сохраняет слово дня для указанной даты."""
+    if not async_session:
+        return False
+    async with async_session() as session:
+        new_wod = WordOfDay(date=target_date, word=word)
+        session.add(new_wod)
+        try:
+            await session.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Ошибка сохранения слова дня: {e}")
+            return False

@@ -10,6 +10,20 @@ from pathlib import Path
 from typing import Optional
 
 
+def get_first_letter(word: str) -> str:
+    """Извлекает первую букву, учитывая аварские диграфы."""
+    if not word:
+        return ""
+    word = word.strip().upper()
+    # Нормализация палочки
+    word = word.replace("I", "Ӏ").replace("1", "Ӏ").replace("L", "Ӏ")
+    if len(word) >= 2:
+        second = word[1]
+        if second in ("Ъ", "Ь", "Ӏ"):
+            return word[0:2]
+    return word[0]
+
+
 class Dictionary:
     """Класс для работы с двуязычным словарём (один JSONL файл)."""
 
@@ -17,6 +31,7 @@ class Dictionary:
         self.filepath = filepath
         self.entries: list[dict] = []
         self.word_index: dict[str, list[int]] = {}  # word -> list of entry indices
+        self.letters_index: dict[str, list[int]] = {} # letter -> list of entry indices
         self._load()
 
     def _load(self):
@@ -36,6 +51,12 @@ class Dictionary:
                         if word not in self.word_index:
                             self.word_index[word] = []
                         self.word_index[word].append(idx)
+                        
+                        letter = get_first_letter(word)
+                        if letter:
+                            if letter not in self.letters_index:
+                                self.letters_index[letter] = []
+                            self.letters_index[letter].append(idx)
                 except json.JSONDecodeError:
                     continue
 
@@ -93,6 +114,17 @@ class Dictionary:
         word_lower = word.lower().strip()
         if word_lower in self.word_index:
             return [self.entries[idx] for idx in self.word_index[word_lower]]
+        return []
+
+    def get_alphabet(self) -> list[dict]:
+        """Получить список букв и количество слов."""
+        return [{"letter": k, "count": len(v)} for k, v in sorted(self.letters_index.items())]
+
+    def get_words_by_letter(self, letter: str) -> list[dict]:
+        """Получить все слова на заданную букву."""
+        letter = letter.upper()
+        if letter in self.letters_index:
+            return [self.entries[idx] for idx in self.letters_index[letter]]
         return []
 
     def get_random(self) -> dict:
@@ -166,3 +198,15 @@ class DictionaryManager:
         if d is None:
             return None
         return d.get_random_with_examples()
+
+    def get_alphabet(self, dict_name: str = "av-ru") -> list[dict]:
+        d = self.get_dict(dict_name)
+        if d is None:
+            return []
+        return d.get_alphabet()
+
+    def get_words_by_letter(self, letter: str, dict_name: str = "av-ru") -> list[dict]:
+        d = self.get_dict(dict_name)
+        if d is None:
+            return []
+        return d.get_words_by_letter(letter)
