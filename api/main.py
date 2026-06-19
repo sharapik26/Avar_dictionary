@@ -16,6 +16,8 @@ import sys
 BASE_DIR = Path(__file__).parent.parent
 WEBAPP_DIR = BASE_DIR / "webapp"
 
+# Добавляем папки в PYTHONPATH для корректных импортов
+sys.path.insert(0, str(BASE_DIR / "api"))
 sys.path.insert(0, str(BASE_DIR / "bot"))
 
 from dictionary import DictionaryManager
