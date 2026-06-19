@@ -11,13 +11,22 @@ from config import DATABASE_URL
 
 logger = logging.getLogger(__name__)
 
+import ssl
+
 # SQLAlchemy requires postgresql+asyncpg:// for async postgres connections
 db_url = DATABASE_URL
 if db_url and db_url.startswith("postgresql://"):
     db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 try:
-    engine = create_async_engine(db_url, echo=False)
+    connect_args = {}
+    if db_url and "supabase" in db_url:
+        ssl_ctx = ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.CERT_NONE
+        connect_args["ssl"] = ssl_ctx
+        
+    engine = create_async_engine(db_url, echo=False, connect_args=connect_args)
     async_session = async_sessionmaker(engine, expire_on_commit=False)
 except Exception as e:
     logger.error(f"Ошибка подключения к БД: {e}")

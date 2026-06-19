@@ -9,7 +9,7 @@ WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://your-domain.com")
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL", 
-    "postgresql://postgres:Sharapudin1.@db.wzvwsfrqhgishbwoxcfn.supabase.co:5432/postgres"
+    "YOUR_DATABASE_URL_HERE"
 )
 
 WORD_OF_DAY_HOUR = 10
