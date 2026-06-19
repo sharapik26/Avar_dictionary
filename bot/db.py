@@ -4,7 +4,7 @@
 import logging
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import BigInteger, select
+from sqlalchemy import BigInteger, String, select
 from datetime import datetime
 
 from config import DATABASE_URL
@@ -42,6 +42,8 @@ class Subscriber(Base):
     __tablename__ = "subscribers"
 
     chat_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    username: Mapped[str | None] = mapped_column(String, nullable=True)
+    full_name: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
 
@@ -57,7 +59,7 @@ async def init_db():
         logger.error(f"Ошибка при создании таблиц: {e}")
 
 
-async def add_subscriber(chat_id: int) -> bool:
+async def add_subscriber(chat_id: int, username: str = None, full_name: str = None) -> bool:
     """
     Добавляет подписчика.
     Возвращает True, если добавлен успешно, False если уже существует.
@@ -71,7 +73,7 @@ async def add_subscriber(chat_id: int) -> bool:
         if result.scalar_one_or_none():
             return False
             
-        new_sub = Subscriber(chat_id=chat_id)
+        new_sub = Subscriber(chat_id=chat_id, username=username, full_name=full_name)
         session.add(new_sub)
         try:
             await session.commit()

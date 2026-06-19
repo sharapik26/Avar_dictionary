@@ -182,7 +182,10 @@ async def random_word_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /subscribe."""
     chat_id = update.effective_chat.id
-    added = await add_subscriber(chat_id)
+    user = update.effective_user
+    username = user.username if user else None
+    full_name = user.full_name if user else None
+    added = await add_subscriber(chat_id, username, full_name)
 
     if not added:
         await update.message.reply_text(
