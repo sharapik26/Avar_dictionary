@@ -33,7 +33,8 @@ from telegram.ext import (
 )
 from telegram.constants import ParseMode
 
-from config import BOT_TOKEN, WEBAPP_URL, SUBSCRIBERS_FILE, DATA_DIR, PROXY_URL
+from config import BOT_TOKEN, WEBAPP_URL, DATA_DIR, PROXY_URL
+from db import init_db, add_subscriber, remove_subscriber, get_all_subscribers
 from dictionary import DictionaryManager
 
 # Настройка логирования
@@ -45,27 +46,6 @@ logger = logging.getLogger(__name__)
 
 # Загрузка словарей
 dict_manager = DictionaryManager(DATA_DIR)
-
-
-# ──────────────────────────────────────────────
-# Работа с подписчиками
-# ──────────────────────────────────────────────
-
-def load_subscribers() -> set:
-    """Загрузить список подписчиков из файла."""
-    if os.path.exists(SUBSCRIBERS_FILE):
-        try:
-            with open(SUBSCRIBERS_FILE, "r") as f:
-                return set(json.load(f))
-        except (json.JSONDecodeError, IOError):
-            return set()
-    return set()
-
-
-def save_subscribers(subscribers: set):
-    """Сохранить список подписчиков в файл."""
-    with open(SUBSCRIBERS_FILE, "w") as f:
-        json.dump(list(subscribers), f)
 
 
 # ──────────────────────────────────────────────
@@ -201,18 +181,16 @@ async def random_word_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /subscribe."""
-    subscribers = load_subscribers()
     chat_id = update.effective_chat.id
+    added = await add_subscriber(chat_id)
 
-    if chat_id in subscribers:
+    if not added:
         await update.message.reply_text(
             "✅ Вы уже подписаны на «слово дня»\\!\n"
             "Каждый день в 10:00 \\(МСК\\) вы будете получать новое аварское слово\\.",
             parse_mode=ParseMode.MARKDOWN_V2,
         )
     else:
-        subscribers.add(chat_id)
-        save_subscribers(subscribers)
         await update.message.reply_text(
             "🎉 Вы подписались на «слово дня»\\!\n\n"
             "Каждый день в *10:00* \\(МСК\\) вы будете получать новое аварское слово с переводом и примером\\.\n\n"
@@ -223,12 +201,10 @@ async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def unsubscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /unsubscribe."""
-    subscribers = load_subscribers()
     chat_id = update.effective_chat.id
+    removed = await remove_subscriber(chat_id)
 
-    if chat_id in subscribers:
-        subscribers.discard(chat_id)
-        save_subscribers(subscribers)
+    if removed:
         await update.message.reply_text(
             "👋 Вы отписались от «слова дня»\\.\n"
             "Чтобы подписаться снова: /subscribe",
@@ -284,9 +260,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def send_word_of_day(context: ContextTypes.DEFAULT_TYPE):
     """Отправить 'слово дня' всем подписчикам."""
-    subscribers = load_subscribers()
+    subscribers = await get_all_subscribers()
     if not subscribers:
-        logger.info("Нет подписчиков для рассылки слова дня.")
+        logger.info("Нет подписчиков для слова дня.")
         return
 
     entry = dict_manager.get_random("av-ru")
@@ -312,9 +288,8 @@ async def send_word_of_day(context: ContextTypes.DEFAULT_TYPE):
             failed.append(chat_id)
 
     # Удалить невалидные чаты
-    if failed:
-        subscribers -= set(failed)
-        save_subscribers(subscribers)
+    for fail_id in failed:
+        await remove_subscriber(fail_id)
 
     logger.info(f"Слово дня отправлено {sent_count} подписчикам.")
 
@@ -324,7 +299,9 @@ async def send_word_of_day(context: ContextTypes.DEFAULT_TYPE):
 # ──────────────────────────────────────────────
 
 async def post_init(application: Application):
-    """Настройка команд бота и кнопки Mini App."""
+    """Настройка команд бота, кнопки Mini App и БД."""
+    await init_db()
+
     await application.bot.set_my_commands([
         BotCommand("start", "Главное меню и словарь"),
         BotCommand("word", "Случайное слово"),
