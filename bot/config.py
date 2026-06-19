@@ -8,7 +8,7 @@ import os
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 
 # URL Mini App (заменить на реальный при деплое)
-WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://hybrid-wage-devel-chicago.trycloudflare.com")
+WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://your-domain.com")
 
 # Файл для хранения подписчиков
 SUBSCRIBERS_FILE = os.path.join(os.path.dirname(__file__), "subscribers.json")
