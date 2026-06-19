@@ -207,7 +207,7 @@ async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chat_id in subscribers:
         await update.message.reply_text(
             "✅ Вы уже подписаны на «слово дня»\\!\n"
-            "Каждый день в 09:00 \\(МСК\\) вы будете получать новое аварское слово\\.",
+            "Каждый день в 10:00 \\(МСК\\) вы будете получать новое аварское слово\\.",
             parse_mode=ParseMode.MARKDOWN_V2,
         )
     else:
@@ -215,7 +215,7 @@ async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_subscribers(subscribers)
         await update.message.reply_text(
             "🎉 Вы подписались на «слово дня»\\!\n\n"
-            "Каждый день в *09:00* \\(МСК\\) вы будете получать новое аварское слово с переводом и примером\\.\n\n"
+            "Каждый день в *10:00* \\(МСК\\) вы будете получать новое аварское слово с переводом и примером\\.\n\n"
             "Для отписки: /unsubscribe",
             parse_mode=ParseMode.MARKDOWN_V2,
         )
@@ -364,10 +364,10 @@ def get_bot_app() -> Application | None:
     if job_queue:
         job_queue.run_daily(
             send_word_of_day,
-            time=time(hour=6, minute=0),  # UTC (МСК - 3)
+            time=time(hour=7, minute=0),  # UTC (МСК - 3)
             name="word_of_day",
         )
-        logger.info("Запланирована ежедневная рассылка слова дня в 09:00 МСК")
+        logger.info("Запланирована ежедневная рассылка слова дня в 10:00 МСК")
 
     return app
 

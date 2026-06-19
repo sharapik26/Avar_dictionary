@@ -9,7 +9,7 @@ WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://your-domain.com")
 
 SUBSCRIBERS_FILE = os.path.join(os.path.dirname(__file__), "subscribers.json")
 
-WORD_OF_DAY_HOUR = 9
+WORD_OF_DAY_HOUR = 10
 WORD_OF_DAY_MINUTE = 0
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..")
