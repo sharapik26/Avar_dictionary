@@ -76,5 +76,4 @@ pip install -r requirements.txt
 Команда запуска:
 ```bash
 uvicorn api.main:app --host 0.0.0.0 --port $PORT
-```
-Не забудьте настроить соответствующие переменные окружения (`BOT_TOKEN`, `WEBAPP_URL`) на вашем сервере (например, Render).
+
