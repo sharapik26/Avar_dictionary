@@ -10,18 +10,46 @@ from pathlib import Path
 from typing import Optional
 
 
-def get_first_letter(word: str) -> str:
-    """Извлекает первую букву, учитывая аварские диграфы."""
+VALID_AVAR_DIGRAPHS = {
+    "ГЪ", "ГЬ", "ГӀ", 
+    "КЪ", "КЬ", "КӀ", 
+    "ЛЪ", 
+    "ТӀ", 
+    "ХЪ", "ХЬ", "ХӀ", 
+    "ЦӀ", 
+    "ЧӀ", 
+    "ШӀ"
+}
+
+def get_first_letter(word: str, is_russian: bool = False) -> str:
+    """Извлекает первую букву, учитывая только валидные аварские диграфы."""
     if not word:
         return ""
-    word = word.strip().upper()
+    
+    # Очистка от мусора (тире, кавычки) в начале
+    word = word.strip(" -\"'«».,!?()").upper()
+    if not word:
+        return ""
+        
     # Нормализация палочки
     word = word.replace("I", "Ӏ").replace("1", "Ӏ").replace("L", "Ӏ")
+    
+    first = word[0]
+    # Если первый символ не буква и не палочка, игнорируем
+    if not first.isalpha() and first != "Ӏ":
+        return ""
+        
+    if is_russian:
+        return first
+        
     if len(word) >= 2:
         second = word[1]
         if second in ("Ъ", "Ь", "Ӏ"):
-            return word[0:2]
-    return word[0]
+            digraph = first + second
+            if digraph in VALID_AVAR_DIGRAPHS:
+                return digraph
+                
+    return first
 
 
 def normalize_for_search(word: str) -> str:
@@ -46,6 +74,7 @@ class Dictionary:
 
     def __init__(self, filepath: str):
         self.filepath = filepath
+        self.is_russian = "ru-av" in filepath
         self.entries: list[dict] = []
         self.word_index: dict[str, list[int]] = {}  # word -> list of entry indices
         self.letters_index: dict[str, list[int]] = {} # letter -> list of entry indices
@@ -70,7 +99,7 @@ class Dictionary:
                             self.word_index[norm_word] = []
                         self.word_index[norm_word].append(idx)
                         
-                        letter = get_first_letter(word)
+                        letter = get_first_letter(word, self.is_russian)
                         if letter:
                             if letter not in self.letters_index:
                                 self.letters_index[letter] = []

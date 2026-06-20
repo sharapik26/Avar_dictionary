@@ -373,6 +373,27 @@ body::before {
     font-weight: 500;
 }
 
+.back-to-alphabet {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition-base);
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+}
+
+.back-to-alphabet:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
 .results-list {
     display: flex;
     flex-direction: column;

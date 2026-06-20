@@ -63,6 +63,7 @@
         alphabetState: $('alphabetState'),
         alphabetGrid: $('alphabetGrid'),
         bottomNav: $('bottomNav'),
+        btnBackToAlphabet: $('btnBackToAlphabet'),
     };
 
     // ══════════════════════════════════════
@@ -171,6 +172,7 @@
             dom.searchContainer.style.display = 'block';
             dom.alphabetState.style.display = 'none';
             state.viewingLetter = false;
+            dom.btnBackToAlphabet.style.display = 'none';
             hideBackButton();
             if (state.query) {
                 performSearch(state.query);
@@ -211,10 +213,15 @@
         try {
             const data = await apiGetWordsByLetter(letter, state.currentDict);
             state.results = data || [];
+            
+            // Показываем кнопку назад
+            dom.btnBackToAlphabet.style.display = 'flex';
+            
             if (window.Telegram && window.Telegram.WebApp) {
                 window.Telegram.WebApp.BackButton.show();
-                state.viewingLetter = true;
             }
+            state.viewingLetter = true;
+            
             showResults(state.results);
             dom.resultsCount.textContent = `Слова на букву «${letter}» (${state.results.length})`;
         } catch (error) {
@@ -302,8 +309,406 @@
             ? 'Введите слово на аварском...'
             : 'Введите слово на русском...';
 
-        // Повторить поиск если есть запрос
-        if (state.query) {
+        // Повторить поиск или перезагрузить алфавит
+        if (state.currentTab === 'alphabet') {
+            if (state.viewingLetter) {
+                // Возвращаемся в список алфавита при смене языка
+                state.viewingLetter = false;
+                dom.btnBackToAlphabet.style.display = 'none';
+                hideBackButton();
+                dom.resultsList.innerHTML = '';
+                dom.resultsHeader.classList.remove('visible');
+                dom.alphabetState.style.display = 'block';
+            }
+            loadAlphabet();
+        } else if (state.query) {
+            showLoading();
+            performSearch(state.query);
+        }
+    }
+
+    // ══════════════════════════════════════
+    // Отображение состояний
+    // ══════════════════════════════════════
+
+    function showWelcome() {
+        dom.welcomeState.style.display = 'flex';
+        dom.resultsList.innerHTML = '';
+        dom.resultsHeader.classList.remove('visible');
+        dom.emptyState.classList.remove('visible');
+        dom.loadingIndicator.classList.remove('visible');
+        hideBackButton();
+    }
+
+    function showLoading() {
+        dom.welcomeState.style.display = 'none';
+        dom.resultsList.innerHTML = '';
+        dom.resultsHeader.classList.remove('visible');
+        dom.emptyState.classList.remove('visible');
+        dom.loadingIndicator.classList.add('visible');
+    }
+
+    function showEmpty() {
+        dom.welcomeState.style.display = 'none';
+        dom.resultsList.innerHTML = '';
+        dom.resultsHeader.classList.remove('visible');
+        dom.loadingIndicator.classList.remove('visible');
+        dom.emptyState.classList.add('visible');
+    }
+
+    function showResults(results) {
+        dom.welcomeState.style.display = 'none';
+        dom.loadingIndicator.classList.remove('visible');
+        dom.emptyState.classList.remove('visible');
+
+        // Обновить счётчик
+        dom.resultsCount.textContent = `${results.length} ${pluralize(results.length, 'результат', 'результата', 'результатов')}`;
+        dom.resultsHeader.classList.add('visible');
+
+        // Рендер результатов
+        dom.resultsList.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+
+        results.forEach((item, index) => {
+            const card = createWordCard(item, index);
+            fragment.appendChild(card);
+        });
+
+        dom.resultsList.appendChild(fragment);
+    }
+
+    // ══════════════════════════════════════
+    // Создание карточек
+    // ══════════════════════════════════════
+
+    function createWordCard(item, index) {
+        const card = document.createElement('div');
+        card.className = 'word-card';
+        card.style.animationDelay = `${index * 0.04}```javascript
+/**
+ * МагӀарул мацӀ — Аварский словарь
+ * Telegram Mini App — Логика приложения
+ */
+
+(function () {
+    'use strict';
+
+    // ══════════════════════════════════════
+    // Конфигурация
+    // ══════════════════════════════════════
+
+    const API_BASE = window.location.origin;
+    const DEBOUNCE_MS = 300;
+    const MAX_RESULTS = 50;
+
+    // ══════════════════════════════════════
+    // Состояние приложения
+    // ══════════════════════════════════════
+
+    const state = {
+        currentDict: 'av-ru',
+        query: '',
+        results: [],
+        isLoading: false,
+        currentRandomWord: null,
+        currentTab: 'search',
+        viewingLetter: false,
+    };
+
+    // ══════════════════════════════════════
+    // DOM элементы
+    // ══════════════════════════════════════
+
+    const $ = (id) => document.getElementById(id);
+
+    const dom = {
+        searchInput: $('searchInput'),
+        searchClear: $('searchClear'),
+        resultsList: $('resultsList'),
+        resultsHeader: $('resultsHeader'),
+        resultsCount: $('resultsCount'),
+        loadingIndicator: $('loadingIndicator'),
+        welcomeState: $('welcomeState'),
+        emptyState: $('emptyState'),
+        btnAvRu: $('btnAvRu'),
+        btnRuAv: $('btnRuAv'),
+        statsBadge: $('statsBadge'),
+        modalOverlay: $('modalOverlay'),
+        modal: $('modal'),
+        modalContent: $('modalContent'),
+        randomWordCard: $('randomWordCard'),
+        randomWord: $('randomWord'),
+        randomPos: $('randomPos'),
+        randomTranslation: $('randomTranslation'),
+        randomExample: $('randomExample'),
+        randomExAv: $('randomExAv'),
+        randomExRu: $('randomExRu'),
+        refreshRandom: $('refreshRandom'),
+        navSearch: $('navSearch'),
+        navAlphabet: $('navAlphabet'),
+        searchContainer: $('searchContainer'),
+        alphabetState: $('alphabetState'),
+        alphabetGrid: $('alphabetGrid'),
+        bottomNav: $('bottomNav'),
+        btnBackToAlphabet: $('btnBackToAlphabet'),
+    };
+
+    // ══════════════════════════════════════
+    // Telegram WebApp интеграция
+    // ══════════════════════════════════════
+
+    function initTelegram() {
+        try {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+
+                // Адаптация к теме Telegram
+                if (tg.colorScheme === 'light') {
+                    document.documentElement.style.setProperty('--color-bg-primary', '#f0f2f5');
+                    document.documentElement.style.setProperty('--color-bg-secondary', '#ffffff');
+                    document.documentElement.style.setProperty('--color-bg-card', 'rgba(255, 255, 255, 0.9)');
+                    document.documentElement.style.setProperty('--color-bg-card-hover', 'rgba(240, 242, 245, 0.95)');
+                    document.documentElement.style.setProperty('--color-bg-glass', 'rgba(0, 0, 0, 0.03)');
+                    document.documentElement.style.setProperty('--color-bg-glass-strong', 'rgba(0, 0, 0, 0.06)');
+                    document.documentElement.style.setProperty('--color-text-primary', '#1a1a2e');
+                    document.documentElement.style.setProperty('--color-text-secondary', '#4a5568');
+                    document.documentElement.style.setProperty('--color-text-muted', '#718096');
+                    document.documentElement.style.setProperty('--border-subtle', 'rgba(0, 0, 0, 0.08)');
+                    document.documentElement.style.setProperty('--color-surface', '#e2e8f0');
+                }
+
+                // Настройка кнопки "Назад"
+                tg.BackButton.onClick(() => {
+                    if (dom.modal.classList.contains('active')) {
+                        closeModal();
+                    } else if (state.viewingLetter) {
+                        state.viewingLetter = false;
+                        switchTab('alphabet');
+                        tg.BackButton.hide();
+                    } else {
+                        tg.close();
+                    }
+                });
+            }
+        } catch (e) {
+            console.log('Telegram WebApp SDK не доступен (работаем в браузере)');
+        }
+    }
+
+    // ══════════════════════════════════════
+    // API запросы
+    // ══════════════════════════════════════
+
+    async function apiSearch(query, dict, limit = MAX_RESULTS) {
+        const url = `${API_BASE}/api/search?q=${encodeURIComponent(query)}&dict=${dict}&limit=${limit}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    }
+
+    async function apiGetWord(word, dict) {
+        const url = `${API_BASE}/api/word/${encodeURIComponent(word)}?dict=${dict}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    }
+
+    async function apiGetRandom(dict = 'av-ru') {
+        const url = `${API_BASE}/api/random?dict=${dict}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    }
+
+    async function apiGetStats() {
+        const url = `${API_BASE}/api/stats`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    }
+
+    
+    async function apiGetAlphabet(dict) {
+        const url = `${API_BASE}/api/alphabet?dict=${dict}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    }
+
+    async function apiGetWordsByLetter(letter, dict) {
+        const url = `${API_BASE}/api/words_by_letter/${encodeURIComponent(letter)}?dict=${dict}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    }
+
+    // ══════════════════════════════════════
+    // Вкладки и Алфавит
+    // ══════════════════════════════════════
+
+    function switchTab(tab) {
+        if (state.currentTab === tab) return;
+        state.currentTab = tab;
+
+        dom.navSearch.classList.toggle('active', tab === 'search');
+        dom.navAlphabet.classList.toggle('active', tab === 'alphabet');
+
+        if (tab === 'search') {
+            dom.searchContainer.style.display = 'block';
+            dom.alphabetState.style.display = 'none';
+            state.viewingLetter = false;
+            dom.btnBackToAlphabet.style.display = 'none';
+            hideBackButton();
+            if (state.query) {
+                performSearch(state.query);
+            } else {
+                showWelcome();
+            }
+        } else {
+            dom.searchContainer.style.display = 'none';
+            dom.welcomeState.style.display = 'none';
+            dom.emptyState.classList.remove('visible');
+            dom.resultsList.innerHTML = '';
+            dom.resultsHeader.classList.remove('visible');
+            dom.alphabetState.style.display = 'block';
+            loadAlphabet();
+        }
+    }
+
+    async function loadAlphabet() {
+        dom.alphabetGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--color-text-muted); padding: 20px;">Загрузка...</div>';
+        try {
+            const data = await apiGetAlphabet(state.currentDict);
+            dom.alphabetGrid.innerHTML = '';
+            data.forEach(item => {
+                const tile = document.createElement('div');
+                tile.className = 'alphabet-tile';
+                tile.innerHTML = `<div class="alphabet-tile-letter">${item.letter}</div><div class="alphabet-tile-count">${item.count}</div>`;
+                tile.onclick = () => loadWordsByLetter(item.letter);
+                dom.alphabetGrid.appendChild(tile);
+            });
+        } catch (error) {
+            dom.alphabetGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444; padding: 20px;">Ошибка загрузки</div>';
+        }
+    }
+
+    async function loadWordsByLetter(letter) {
+        dom.alphabetState.style.display = 'none';
+        showLoading();
+        try {
+            const data = await apiGetWordsByLetter(letter, state.currentDict);
+            state.results = data || [];
+            
+            // Показываем кнопку назад
+            dom.btnBackToAlphabet.style.display = 'flex';
+            
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.BackButton.show();
+            }
+            state.viewingLetter = true;
+            
+            showResults(state.results);
+            dom.resultsCount.textContent = `Слова на букву «${letter}» (${state.results.length})`;
+        } catch (error) {
+            showEmpty();
+        }
+    }
+
+    // ══════════════════════════════════════
+    // Поиск
+    // ══════════════════════════════════════
+
+    let searchTimeout = null;
+
+    function onSearchInput() {
+        const query = dom.searchInput.value.trim();
+        state.query = query;
+
+        // Показать/скрыть кнопку очистки
+        dom.searchClear.classList.toggle('visible', query.length > 0);
+
+        // Отменить предыдущий таймер
+        if (searchTimeout) clearTimeout(searchTimeout);
+
+        if (!query) {
+            showWelcome();
+            return;
+        }
+
+        // Показать загрузку
+        showLoading();
+
+        // Debounce
+        searchTimeout = setTimeout(() => performSearch(query), DEBOUNCE_MS);
+    }
+
+    async function performSearch(query) {
+        if (query !== state.query) return; // Запрос устарел
+
+        state.isLoading = true;
+
+        try {
+            const data = await apiSearch(query, state.currentDict);
+            
+            // Проверяем, что запрос ещё актуален
+            if (query !== state.query) return;
+
+            state.results = data.results || [];
+
+            if (state.results.length === 0) {
+                showEmpty();
+            } else {
+                showResults(state.results);
+            }
+        } catch (error) {
+            console.error('Ошибка поиска:', error);
+            showEmpty();
+        } finally {
+            state.isLoading = false;
+        }
+    }
+
+    function clearSearch() {
+        dom.searchInput.value = '';
+        state.query = '';
+        dom.searchClear.classList.remove('visible');
+        showWelcome();
+        dom.searchInput.focus();
+    }
+
+    // ══════════════════════════════════════
+    // Переключение направления
+    // ══════════════════════════════════════
+
+    function switchDirection(dict) {
+        if (state.currentDict === dict) return;
+
+        state.currentDict = dict;
+
+        // Обновить кнопки
+        dom.btnAvRu.classList.toggle('active', dict === 'av-ru');
+        dom.btnRuAv.classList.toggle('active', dict === 'ru-av');
+
+        // Обновить placeholder
+        dom.searchInput.placeholder = dict === 'av-ru'
+            ? 'Введите слово на аварском...'
+            : 'Введите слово на русском...';
+
+        // Повторить поиск или перезагрузить алфавит
+        if (state.currentTab === 'alphabet') {
+            if (state.viewingLetter) {
+                // Возвращаемся в список алфавита при смене языка
+                state.viewingLetter = false;
+                dom.btnBackToAlphabet.style.display = 'none';
+                hideBackButton();
+                dom.resultsList.innerHTML = '';
+                dom.resultsHeader.classList.remove('visible');
+                dom.alphabetState.style.display = 'block';
+            }
+            loadAlphabet();
+        } else if (state.query) {
             showLoading();
             performSearch(state.query);
         }
@@ -694,6 +1099,15 @@
         dom.searchClear.addEventListener('click', clearSearch);
         dom.navSearch.addEventListener('click', () => switchTab('search'));
         dom.navAlphabet.addEventListener('click', () => switchTab('alphabet'));
+        
+        dom.btnBackToAlphabet.addEventListener('click', () => {
+            state.viewingLetter = false;
+            dom.btnBackToAlphabet.style.display = 'none';
+            hideBackButton();
+            dom.resultsList.innerHTML = '';
+            dom.resultsHeader.classList.remove('visible');
+            dom.alphabetState.style.display = 'block';
+        });
 
         // Переключатель направления
         dom.btnAvRu.addEventListener('click', () => switchDirection('av-ru'));
